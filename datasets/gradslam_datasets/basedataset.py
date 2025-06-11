@@ -122,6 +122,8 @@ class GradSLAMDataset(torch.utils.data.Dataset):
         **kwargs,
     ):
         super().__init__()
+        self.raw = config_dict["raw"]
+        self.green = config_dict["green"]
         self.name = config_dict["dataset_name"]
         self.device = device
         self.png_depth_scale = config_dict["camera_params"]["png_depth_scale"]

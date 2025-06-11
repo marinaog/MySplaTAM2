@@ -426,6 +426,7 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
         os.makedirs(depth_dir, exist_ok=True)
 
     gt_w2c_list = []
+    valid_masks_dict = {} # ME: for raw green
     for time_idx in tqdm(range(num_frames)):
          # Get RGB-D Data & Camera Parameters
         color, depth, intrinsics, pose = dataset[time_idx]
@@ -469,6 +470,7 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
         rastered_depth = rastered_depth * valid_depth_mask
         silhouette = depth_sil[1, :, :]
         presence_sil_mask = (silhouette > sil_thres)
+        valid_masks_dict[time_idx] = valid_depth_mask.cpu() # ME: Save valid_depth_mask
         
         # Render RGB and Calculate PSNR
         im, radius, _, = Renderer(raster_settings=curr_data['cam'])(**rendervar)
@@ -483,6 +485,8 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
                         data_range=1.0, size_average=True)
         lpips_score = loss_fn_alex(torch.clamp(weighted_im.unsqueeze(0), 0.0, 1.0),
                                     torch.clamp(weighted_gt_im.unsqueeze(0), 0.0, 1.0)).item()
+        
+        print(f"Evaluated time_idx: {time_idx} - PSNR: {psnr} - SSIM: {ssim} - LPIPS: {lpips_score}") # ME: print every frames
 
         psnr_list.append(psnr.cpu().numpy())
         ssim_list.append(ssim.cpu().numpy())
@@ -541,6 +545,7 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
                                  plot_name=plot_name, save_plot=True,
                                  wandb_run=wandb_run, wandb_step=None, 
                                  wandb_title="Eval/Qual Viz")
+    torch.save(valid_masks_dict, os.path.join(eval_dir, "valid_depth_masks.pt")) # ME: Save the dictionary of masks
 
     try:
         # Compute the final ATE RMSE

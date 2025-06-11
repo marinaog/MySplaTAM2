@@ -23,7 +23,7 @@ import wandb
 
 from datasets.gradslam_datasets import (load_dataset_config, ICLDataset, ReplicaDataset, ReplicaV2Dataset, AzureKinectDataset,
                                         ScannetDataset, Ai2thorDataset, Record3DDataset, RealsenseDataset, TUMDataset,
-                                        ScannetPPDataset, NeRFCaptureDataset)
+                                        ScannetPPDataset, NeRFCaptureDataset, rawslamDataset)
 from utils.common_utils import seed_everything, save_params_ckpt, save_params
 from utils.eval_helpers import report_loss, report_progress, eval
 from utils.keyframe_selection import keyframe_selection_overlap
@@ -38,6 +38,7 @@ from diff_gaussian_rasterization import GaussianRasterizer as Renderer
 
 
 def get_dataset(config_dict, basedir, sequence, **kwargs):
+    print("sequence used:", sequence)
     if config_dict["dataset_name"].lower() in ["icl"]:
         return ICLDataset(config_dict, basedir, sequence, **kwargs)
     elif config_dict["dataset_name"].lower() in ["replica"]:
@@ -60,6 +61,8 @@ def get_dataset(config_dict, basedir, sequence, **kwargs):
         return ScannetPPDataset(basedir, sequence, **kwargs)
     elif config_dict["dataset_name"].lower() in ["nerfcapture"]:
         return NeRFCaptureDataset(basedir, sequence, **kwargs)
+    elif config_dict["dataset_name"].lower() in ["rawslam"]:
+        return rawslamDataset(config_dict, basedir, sequence, **kwargs)
     else:
         raise ValueError(f"Unknown dataset name {config_dict['dataset_name']}")
 
@@ -515,7 +518,12 @@ def rgbd_slam(config: dict):
             seperate_tracking_res = True
         else:
             seperate_tracking_res = False
+    if "raw" in dataset_config.keys():
+        gradslam_data_cfg["raw"] = dataset_config["raw"]
+    if "green" in dataset_config.keys():
+        gradslam_data_cfg["green"] = dataset_config["green"]
     # Poses are relative to the first frame
+    print("sequence should be", dataset_config["sequence"])
     dataset = get_dataset(
         config_dict=gradslam_data_cfg,
         basedir=dataset_config["basedir"],
