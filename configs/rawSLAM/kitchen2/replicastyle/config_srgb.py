@@ -3,23 +3,22 @@ from os.path import join as p_join
 
 primary_device = "cuda:0"
 
-scenes = ["freiburg1_desk", "freiburg1_desk2", "freiburg1_room", "freiburg2_xyz", "freiburg3_long_office_household"]
+scenes = ["kitchen2","nerdy_robot"]
 
 seed = int(0)
 scene_name = scenes[int(0)]
 
 map_every = 1
 keyframe_every = 5
-mapping_window_size = 20
-tracking_iters = 200
-mapping_iters = 30
-scene_radius_depth_ratio = 2
+mapping_window_size = 24
+tracking_iters = 40
+mapping_iters = 60
 
-group_name = "TUM"
-run_name = f"{scene_name}_seed{seed}"
+group_name = "rawSLAM"
+run_name = f"srgb_withconditionals"
 
 config = dict(
-    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}3",
+    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}/{scene_name}/Replicastyle/{run_name}",
     run_name=run_name,
     seed=seed,
     primary_device=primary_device,
@@ -27,8 +26,8 @@ config = dict(
     keyframe_every=keyframe_every, # Keyframe every nth frame
     mapping_window_size=mapping_window_size, # Mapping window size
     report_global_progress_every=500, # Report Global Progress every nth frame
-    eval_every=500, # Evaluate every nth frame (at end of SLAM)
-    scene_radius_depth_ratio=scene_radius_depth_ratio, # Max First Frame Depth to Scene Radius Ratio (For Pruning/Densification)
+    eval_every=5, # Evaluate every nth frame (at end of SLAM)
+    scene_radius_depth_ratio=3, # Max First Frame Depth to Scene Radius Ratio (For Pruning/Densification)
     mean_sq_dist_method="projective", # ["projective", "knn"] (Type of Mean Squared Distance Calculation for Scale of Gaussians)
     gaussian_distribution="isotropic", # ["isotropic", "anisotropic"] (Isotropic -> Spherical Covariance, Anisotropic -> Ellipsoidal Covariance)
     report_iter_progress=False,
@@ -46,10 +45,10 @@ config = dict(
         eval_save_qual=True,
     ),
     data=dict(
-        basedir="/home/morozco/datasets/TUM_RGBD",
-        gradslam_data_cfg=f"/home/morozco/SECOND_SplaTAM/SplaTAM/configs/data/TUM/{scene_name}.yaml",
-        sequence=f"rgbd_dataset_{scene_name}",
-        desired_image_height=480,
+        basedir="/home/morozco/datasets/my_dataset", #"./data/TUM_RGBD",
+        gradslam_data_cfg=f"/home/morozco/SECOND_SplaTAM/SplaTAM/configs/data/{group_name}.yaml",
+        sequence=scene_name,
+        desired_image_height=360,
         desired_image_width=640,
         start=0,
         end=-1,
@@ -66,9 +65,6 @@ config = dict(
         sil_thres=0.99,
         use_l1=True,
         ignore_outlier_depth_loss=False,
-        use_uncertainty_for_loss_mask=False,
-        use_uncertainty_for_loss=False,
-        use_chamfer=False,
         loss_weights=dict(
             im=0.5,
             depth=1.0,
@@ -79,7 +75,7 @@ config = dict(
             unnorm_rotations=0.0,
             logit_opacities=0.0,
             log_scales=0.0,
-            cam_unnorm_rots=0.002,
+            cam_unnorm_rots=0.0004,
             cam_trans=0.002,
         ),
     ),
@@ -90,9 +86,6 @@ config = dict(
         use_l1=True,
         use_sil_for_loss=False,
         ignore_outlier_depth_loss=False,
-        use_uncertainty_for_loss_mask=False,
-        use_uncertainty_for_loss=False,
-        use_chamfer=False,
         loss_weights=dict(
             im=0.5,
             depth=1.0,

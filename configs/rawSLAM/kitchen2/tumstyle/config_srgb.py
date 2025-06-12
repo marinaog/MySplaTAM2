@@ -3,7 +3,7 @@ from os.path import join as p_join
 
 primary_device = "cuda:0"
 
-scenes = ["freiburg1_desk", "freiburg1_desk2", "freiburg1_room", "freiburg2_xyz", "freiburg3_long_office_household"]
+scenes = ["kitchen2","nerdy_robot"]
 
 seed = int(0)
 scene_name = scenes[int(0)]
@@ -15,19 +15,19 @@ tracking_iters = 200
 mapping_iters = 30
 scene_radius_depth_ratio = 2
 
-group_name = "TUM"
-run_name = f"{scene_name}_seed{seed}"
+group_name = "rawSLAM"
+run_name = f"srgb"
 
 config = dict(
-    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}3",
+    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}/{scene_name}/TUMstyle/{run_name}",
     run_name=run_name,
     seed=seed,
     primary_device=primary_device,
     map_every=map_every, # Mapping every nth frame
     keyframe_every=keyframe_every, # Keyframe every nth frame
     mapping_window_size=mapping_window_size, # Mapping window size
-    report_global_progress_every=500, # Report Global Progress every nth frame
-    eval_every=500, # Evaluate every nth frame (at end of SLAM)
+    report_global_progress_every=500, # debug Report Global Progress every nth frame
+    eval_every=5, #500, # debug Evaluate every nth frame (at end of SLAM)
     scene_radius_depth_ratio=scene_radius_depth_ratio, # Max First Frame Depth to Scene Radius Ratio (For Pruning/Densification)
     mean_sq_dist_method="projective", # ["projective", "knn"] (Type of Mean Squared Distance Calculation for Scale of Gaussians)
     gaussian_distribution="isotropic", # ["isotropic", "anisotropic"] (Isotropic -> Spherical Covariance, Anisotropic -> Ellipsoidal Covariance)
@@ -46,10 +46,10 @@ config = dict(
         eval_save_qual=True,
     ),
     data=dict(
-        basedir="/home/morozco/datasets/TUM_RGBD",
-        gradslam_data_cfg=f"/home/morozco/SECOND_SplaTAM/SplaTAM/configs/data/TUM/{scene_name}.yaml",
-        sequence=f"rgbd_dataset_{scene_name}",
-        desired_image_height=480,
+        basedir="/home/morozco/datasets/my_dataset", #"./data/TUM_RGBD",
+        gradslam_data_cfg=f"/home/morozco/SECOND_SplaTAM/SplaTAM/configs/data/{group_name}.yaml",
+        sequence=scene_name,
+        desired_image_height=360,
         desired_image_width=640,
         start=0,
         end=-1,

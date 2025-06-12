@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=18
 #SBATCH --time=03:00:00
-#SBATCH --output=SECOND_SplaTAM/SplaTAM/my_outputs/rawslam/kitchen2/raw_green/tum_style/%x-%j.out
+#SBATCH --output=SECOND_SplaTAM/SplaTAM/my_outputs/rawslam/kitchen2/raw_srgb/tum_style/%x-%j.out
 
 # entire script fails if a single command fails
 set -e
@@ -28,4 +28,5 @@ echo "Node: $SLURMD_NODENAME"
 echo "Job ID: $SLURM_JOB_ID"
 
 
-python SECOND_SplaTAM/SplaTAM/scripts/splatam.py SECOND_SplaTAM/SplaTAM/configs/rawSLAM/kitchen2/tumstyle/config_raw_green.py
+python SECOND_SplaTAM/SplaTAM/scripts/splatam.py SECOND_SplaTAM/SplaTAM/configs/rawSLAM/kitchen2/tumstyle/config_raw_srgb.py
+# python SECOND_SplaTAM/SplaTAM/scripts/splatam.py SECOND_SplaTAM/SplaTAM/configs/rawSLAM/kitchen2/replicastyle/config_raw_srgb.py

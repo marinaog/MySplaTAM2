@@ -18,7 +18,7 @@ group_name = "rawSLAM"
 run_name = f"raw_green"
 
 config = dict(
-    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}/{scene_name}/{run_name}",
+    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}/{scene_name}/Replicastyle/{run_name}",
     run_name=run_name,
     seed=seed,
     primary_device=primary_device,

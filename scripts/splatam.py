@@ -170,12 +170,17 @@ def initialize_optimizer(params, lrs_dict, tracking):
 
 
 def initialize_first_timestep(dataset, num_frames, scene_radius_depth_ratio, 
-                              mean_sq_dist_method, densify_dataset=None, gaussian_distribution=None):
+                              mean_sq_dist_method, densify_dataset=None, gaussian_distribution=None, raw = False):
     # Get RGB-D Data & Camera Parameters
     color, depth, intrinsics, pose = dataset[0]
 
     # Process RGB-D Data
-    color = color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
+    if raw:
+        assert color.max() > 255, f"line 178 splatam: {color.max()}"
+        color = color.permute(2, 0, 1) / 65535
+    else:
+        assert color.max() < 256, "line 182 splatam"
+        color = color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
     depth = depth.permute(2, 0, 1) # (H, W, C) -> (C, H, W)
     
     # Process Camera Parameters
@@ -188,7 +193,12 @@ def initialize_first_timestep(dataset, num_frames, scene_radius_depth_ratio,
     if densify_dataset is not None:
         # Get Densification RGB-D Data & Camera Parameters
         color, depth, densify_intrinsics, _ = densify_dataset[0]
-        color = color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
+        if raw:
+            assert color.max() > 255, "line 195"
+            color = color.permute(2, 0, 1) / 65535 # (H, W, C) -> (C, H, W)
+        else:
+            assert color.max() < 256, "line 198"
+            color = color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
         depth = depth.permute(2, 0, 1) # (H, W, C) -> (C, H, W)
         densify_intrinsics = densify_intrinsics[:3, :3]
         densify_cam = setup_camera(color.shape[2], color.shape[1], densify_intrinsics.cpu().numpy(), w2c.detach().cpu().numpy())
@@ -564,13 +574,15 @@ def rgbd_slam(config: dict):
                                                                         config['scene_radius_depth_ratio'],
                                                                         config['mean_sq_dist_method'],
                                                                         densify_dataset=densify_dataset,
-                                                                        gaussian_distribution=config['gaussian_distribution'])                                                                                                                  
+                                                                        gaussian_distribution=config['gaussian_distribution'],
+                                                                        raw=dataset_config['raw'])                                                                                                                  
     else:
         # Initialize Parameters & Canoncial Camera parameters
         params, variables, intrinsics, first_frame_w2c, cam = initialize_first_timestep(dataset, num_frames, 
                                                                                         config['scene_radius_depth_ratio'],
                                                                                         config['mean_sq_dist_method'],
-                                                                                        gaussian_distribution=config['gaussian_distribution'])
+                                                                                        gaussian_distribution=config['gaussian_distribution'],
+                                                                                        raw=dataset_config['raw'])                           
     
     # Init seperate dataloader for tracking if required
     if seperate_tracking_res:
@@ -589,7 +601,12 @@ def rgbd_slam(config: dict):
             use_train_split=dataset_config["use_train_split"],
         )
         tracking_color, _, tracking_intrinsics, _ = tracking_dataset[0]
-        tracking_color = tracking_color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
+        if dataset_config['raw']:
+            assert color.max() > 255, "line 603 splatam"
+            tracking_color = tracking_color.permute(2, 0, 1) / 65535 # (H, W, C) -> (C, H, W)
+        else:
+            assert color.max() < 256, "line 606 splatam"
+            tracking_color = tracking_color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
         tracking_intrinsics = tracking_intrinsics[:3, :3]
         tracking_cam = setup_camera(tracking_color.shape[2], tracking_color.shape[1], 
                                     tracking_intrinsics.cpu().numpy(), first_frame_w2c.detach().cpu().numpy())
@@ -639,7 +656,12 @@ def rgbd_slam(config: dict):
                 curr_w2c[:3, :3] = build_rotation(curr_cam_rot)
                 curr_w2c[:3, 3] = curr_cam_tran
                 # Initialize Keyframe Info
-                color = color.permute(2, 0, 1) / 255
+                if dataset_config['raw']:
+                    assert color.max() > 255, "line 658"
+                    color = color.permute(2, 0, 1) / 65535
+                else:
+                    assert color.max() < 256, "line 661"
+                    color = color.permute(2, 0, 1) / 255
                 depth = depth.permute(2, 0, 1)
                 curr_keyframe = {'id': time_idx, 'est_w2c': curr_w2c, 'color': color, 'depth': depth}
                 # Add to keyframe list
@@ -654,7 +676,12 @@ def rgbd_slam(config: dict):
         # Process poses
         gt_w2c = torch.linalg.inv(gt_pose)
         # Process RGB-D Data
-        color = color.permute(2, 0, 1) / 255
+        if dataset_config['raw']:
+            assert color.max() > 255, "line 678"
+            color = color.permute(2, 0, 1) / 65535
+        else:
+            assert color.max() < 256, "line 681"
+            color = color.permute(2, 0, 1) / 255
         depth = depth.permute(2, 0, 1)
         gt_w2c_all_frames.append(gt_w2c)
         curr_gt_w2c = gt_w2c_all_frames
@@ -667,7 +694,12 @@ def rgbd_slam(config: dict):
         # Initialize Data for Tracking
         if seperate_tracking_res:
             tracking_color, tracking_depth, _, _ = tracking_dataset[time_idx]
-            tracking_color = tracking_color.permute(2, 0, 1) / 255
+            if dataset_config['raw']:
+                assert color.max() > 255, "line 696"
+                tracking_color = tracking_color.permute(2, 0, 1) / 65535
+            else:
+                assert color.max() < 256, "line 699"
+                tracking_color = tracking_color.permute(2, 0, 1) / 255
             tracking_depth = tracking_depth.permute(2, 0, 1)
             tracking_curr_data = {'cam': tracking_cam, 'im': tracking_color, 'depth': tracking_depth, 'id': iter_time_idx,
                                   'intrinsics': tracking_intrinsics, 'w2c': first_frame_w2c, 'iter_gt_w2c_list': curr_gt_w2c}
@@ -789,7 +821,12 @@ def rgbd_slam(config: dict):
                 if seperate_densification_res:
                     # Load RGBD frames incrementally instead of all frames
                     densify_color, densify_depth, _, _ = densify_dataset[time_idx]
-                    densify_color = densify_color.permute(2, 0, 1) / 255
+                    if dataset_config['raw']:
+                        assert color.max() > 255, "line 823"
+                        densify_color = densify_color.permute(2, 0, 1) / 65535
+                    else:
+                        assert color.max() < 256, "line 826"
+                        densify_color = densify_color.permute(2, 0, 1) / 255
                     densify_depth = densify_depth.permute(2, 0, 1)
                     densify_curr_data = {'cam': densify_cam, 'im': densify_color, 'depth': densify_depth, 'id': time_idx, 
                                  'intrinsics': densify_intrinsics, 'w2c': first_frame_w2c, 'iter_gt_w2c_list': curr_gt_w2c}
@@ -972,11 +1009,11 @@ def rgbd_slam(config: dict):
             eval(dataset, params, num_frames, eval_dir, sil_thres=config['mapping']['sil_thres'],
                  wandb_run=wandb_run, wandb_save_qual=config['wandb']['eval_save_qual'],
                  mapping_iters=config['mapping']['num_iters'], add_new_gaussians=config['mapping']['add_new_gaussians'],
-                 eval_every=config['eval_every'])
+                 eval_every=config['eval_every'], raw = dataset_config["raw"])
         else:
             eval(dataset, params, num_frames, eval_dir, sil_thres=config['mapping']['sil_thres'],
                  mapping_iters=config['mapping']['num_iters'], add_new_gaussians=config['mapping']['add_new_gaussians'],
-                 eval_every=config['eval_every'])
+                 eval_every=config['eval_every'], raw = dataset_config["raw"])
 
     # Add Camera Parameters to Save them
     params['timestep'] = variables['timestep']

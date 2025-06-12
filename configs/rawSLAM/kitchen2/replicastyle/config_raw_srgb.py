@@ -15,10 +15,10 @@ tracking_iters = 40
 mapping_iters = 60
 
 group_name = "rawSLAM"
-run_name = f"srgb"
+run_name = f"raw_srgb"
 
 config = dict(
-    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}/{scene_name}/{run_name}3",
+    workdir=f"SECOND_SplaTAM/SplaTAM/experiments/{group_name}/{scene_name}/Replicastyle/{run_name}",
     run_name=run_name,
     seed=seed,
     primary_device=primary_device,
@@ -54,7 +54,7 @@ config = dict(
         end=-1,
         stride=1,
         num_frames=-1,
-        raw = False,
+        raw = True,
         green = False,
     ),
     tracking=dict(

@@ -406,7 +406,7 @@ def eval_online(dataset, all_params, num_frames, eval_online_dir, sil_thres,
 
 
 def eval(dataset, final_params, num_frames, eval_dir, sil_thres, 
-         mapping_iters, add_new_gaussians, wandb_run=None, wandb_save_qual=False, eval_every=1, save_frames=False):
+         mapping_iters, add_new_gaussians, wandb_run=None, wandb_save_qual=False, eval_every=1, save_frames=False, raw=False):
     print("Evaluating Final Parameters ...")
     psnr_list = []
     rmse_list = []
@@ -435,7 +435,12 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
         intrinsics = intrinsics[:3, :3]
 
         # Process RGB-D Data
-        color = color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
+        if raw:
+            assert color.max() > 255, "line 439 evalutils"
+            color = color.permute(2, 0, 1) / 65535 # (H, W, C) -> (C, H, W)
+        else:
+            assert color.max() < 256, "line 442 evalutils"
+            color = color.permute(2, 0, 1) / 255 # (H, W, C) -> (C, H, W)
         depth = depth.permute(2, 0, 1) # (H, W, C) -> (C, H, W)
 
         if time_idx == 0:
@@ -519,7 +524,12 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
             viz_render_depth = rastered_depth_viz[0].detach().cpu().numpy()
             normalized_depth = np.clip((viz_render_depth - vmin) / (vmax - vmin), 0, 1)
             depth_colormap = cv2.applyColorMap((normalized_depth * 255).astype(np.uint8), cv2.COLORMAP_JET)
-            cv2.imwrite(os.path.join(render_rgb_dir, "gs_{:04d}.png".format(time_idx)), cv2.cvtColor(viz_render_im*255, cv2.COLOR_RGB2BGR))
+            if raw:
+                assert color.max() > 255, "line 528 utils"
+                cv2.imwrite(os.path.join(render_rgb_dir, "gs_{:04d}.png".format(time_idx)), cv2.cvtColor((viz_render_im*65535).astype(np.uint16), cv2.COLOR_RGB2BGR))
+            else:
+                assert color.max() < 256, "line 531 utils"
+                cv2.imwrite(os.path.join(render_rgb_dir, "gs_{:04d}.png".format(time_idx)), cv2.cvtColor(viz_render_im*255, cv2.COLOR_RGB2BGR))
             cv2.imwrite(os.path.join(render_depth_dir, "gs_{:04d}.png".format(time_idx)), depth_colormap)
 
             # Save GT RGB and Depth
@@ -528,7 +538,12 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
             viz_gt_depth = curr_data['depth'][0].detach().cpu().numpy()
             normalized_depth = np.clip((viz_gt_depth - vmin) / (vmax - vmin), 0, 1)
             depth_colormap = cv2.applyColorMap((normalized_depth * 255).astype(np.uint8), cv2.COLORMAP_JET)
-            cv2.imwrite(os.path.join(rgb_dir, "gt_{:04d}.png".format(time_idx)), cv2.cvtColor(viz_gt_im*255, cv2.COLOR_RGB2BGR))
+            if raw:
+                assert color.max() > 255, "line 542"
+                cv2.imwrite(os.path.join(rgb_dir, "gt_{:04d}.png".format(time_idx)), cv2.cvtColor((viz_gt_im*65535).astype(np.uint16), cv2.COLOR_RGB2BGR))
+            else:
+                assert color.max() < 256, "line 545 utils"
+                cv2.imwrite(os.path.join(rgb_dir, "gt_{:04d}.png".format(time_idx)), cv2.cvtColor(viz_gt_im*255, cv2.COLOR_RGB2BGR))
             cv2.imwrite(os.path.join(depth_dir, "gt_{:04d}.png".format(time_idx)), depth_colormap)
         
         # Plot the Ground Truth and Rasterized RGB & Depth, along with Silhouette
