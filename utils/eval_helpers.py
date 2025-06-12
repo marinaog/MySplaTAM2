@@ -406,7 +406,7 @@ def eval_online(dataset, all_params, num_frames, eval_online_dir, sil_thres,
 
 
 def eval(dataset, final_params, num_frames, eval_dir, sil_thres, 
-         mapping_iters, add_new_gaussians, wandb_run=None, wandb_save_qual=False, eval_every=1, save_frames=False, raw=False):
+         mapping_iters, add_new_gaussians, wandb_run=None, wandb_save_qual=False, eval_every=1, save_frames=True, raw=False):
     print("Evaluating Final Parameters ...")
     psnr_list = []
     rmse_list = []
@@ -515,7 +515,7 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
         rmse_list.append(rmse.cpu().numpy())
         l1_list.append(depth_l1.cpu().numpy())
 
-        if save_frames:
+        if save_frames and (time_idx % 400 == 0):
             # Save Rendered RGB and Depth
             viz_render_im = torch.clamp(im, 0, 1)
             viz_render_im = viz_render_im.detach().cpu().permute(1, 2, 0).numpy()
@@ -525,10 +525,8 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
             normalized_depth = np.clip((viz_render_depth - vmin) / (vmax - vmin), 0, 1)
             depth_colormap = cv2.applyColorMap((normalized_depth * 255).astype(np.uint8), cv2.COLORMAP_JET)
             if raw:
-                assert color.max() > 255, "line 528 utils"
                 cv2.imwrite(os.path.join(render_rgb_dir, "gs_{:04d}.png".format(time_idx)), cv2.cvtColor((viz_render_im*65535).astype(np.uint16), cv2.COLOR_RGB2BGR))
             else:
-                assert color.max() < 256, "line 531 utils"
                 cv2.imwrite(os.path.join(render_rgb_dir, "gs_{:04d}.png".format(time_idx)), cv2.cvtColor(viz_render_im*255, cv2.COLOR_RGB2BGR))
             cv2.imwrite(os.path.join(render_depth_dir, "gs_{:04d}.png".format(time_idx)), depth_colormap)
 
@@ -539,10 +537,8 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
             normalized_depth = np.clip((viz_gt_depth - vmin) / (vmax - vmin), 0, 1)
             depth_colormap = cv2.applyColorMap((normalized_depth * 255).astype(np.uint8), cv2.COLORMAP_JET)
             if raw:
-                assert color.max() > 255, "line 542"
                 cv2.imwrite(os.path.join(rgb_dir, "gt_{:04d}.png".format(time_idx)), cv2.cvtColor((viz_gt_im*65535).astype(np.uint16), cv2.COLOR_RGB2BGR))
             else:
-                assert color.max() < 256, "line 545 utils"
                 cv2.imwrite(os.path.join(rgb_dir, "gt_{:04d}.png".format(time_idx)), cv2.cvtColor(viz_gt_im*255, cv2.COLOR_RGB2BGR))
             cv2.imwrite(os.path.join(depth_dir, "gt_{:04d}.png".format(time_idx)), depth_colormap)
         
