@@ -108,7 +108,7 @@ def report_loss(losses, wandb_run, wandb_step, tracking=False, mapping=False):
 
 def plot_rgbd_silhouette(color, depth, rastered_color, rastered_depth, presence_sil_mask, diff_depth_l1,
                          psnr, depth_l1, fig_title, plot_dir=None, plot_name=None, 
-                         save_plot=False, wandb_run=None, wandb_step=None, wandb_title=None, diff_rgb=None):
+                         save_plot=False, wandb_run=None, wandb_step=None, wandb_title=None, diff_rgb=None, time_idx = 0):
     # Determine Plot Aspect Ratio
     aspect_ratio = color.shape[2] / color.shape[1]
     fig_height = 8
@@ -138,7 +138,7 @@ def plot_rgbd_silhouette(color, depth, rastered_color, rastered_depth, presence_
         ax.axis('off')
     fig.suptitle(fig_title, y=0.95, fontsize=16)
     fig.tight_layout()
-    if save_plot:
+    if save_plot  and (time_idx % 400 == 0):
         save_path = os.path.join(plot_dir, f"{plot_name}.png")
         plt.savefig(save_path, bbox_inches='tight')
     if wandb_run is not None:
@@ -273,7 +273,7 @@ def report_progress(params, data, i, progress_bar, iter_time_idx, sil_thres, eve
                 fig_title = f"Time-Step: {online_time_idx} | Iter: {i} | Frame: {data['id']}"
             plot_rgbd_silhouette(data['im'], data['depth'], im, rastered_depth, presence_sil_mask, diff_depth_l1,
                                  psnr, depth_l1, fig_title, wandb_run=wandb_run, wandb_step=wandb_step, 
-                                 wandb_title=f"{stage} Qual Viz")
+                                 wandb_title=f"{stage} Qual Viz", time_idx = time_idx)
 
 
 def eval_online(dataset, all_params, num_frames, eval_online_dir, sil_thres,
@@ -358,13 +358,13 @@ def eval_online(dataset, all_params, num_frames, eval_online_dir, sil_thres,
         if wandb_run is None:
             plot_rgbd_silhouette(color, depth, im, rastered_depth, presence_sil_mask, diff_depth_l1,
                                  psnr, depth_l1, fig_title, plot_dir, 
-                                 plot_name=plot_name, save_plot=True)
+                                 plot_name=plot_name, save_plot=True, time_idx = time_idx)
         elif wandb_save_qual:
             plot_rgbd_silhouette(color, depth, im, rastered_depth, presence_sil_mask, diff_depth_l1,
                                  psnr, depth_l1, fig_title, plot_dir, 
                                  plot_name=plot_name, save_plot=True,
                                  wandb_run=wandb_run, wandb_step=None, 
-                                 wandb_title="Online Eval/Qual Viz")
+                                 wandb_title="Online Eval/Qual Viz", time_idx = time_idx)
     
     # Compute Average Metrics
     psnr_list = np.array(psnr_list)
@@ -549,13 +549,13 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
         if wandb_run is None:
             plot_rgbd_silhouette(color, depth, im, rastered_depth_viz, presence_sil_mask, diff_depth_l1,
                                  psnr, depth_l1, fig_title, plot_dir, 
-                                 plot_name=plot_name, save_plot=True)
+                                 plot_name=plot_name, save_plot=True, time_idx = time_idx)
         elif wandb_save_qual:
             plot_rgbd_silhouette(color, depth, im, rastered_depth_viz, presence_sil_mask, diff_depth_l1,
                                  psnr, depth_l1, fig_title, plot_dir, 
                                  plot_name=plot_name, save_plot=True,
                                  wandb_run=wandb_run, wandb_step=None, 
-                                 wandb_title="Eval/Qual Viz")
+                                 wandb_title="Eval/Qual Viz",  time_idx = time_idx)
     torch.save(valid_masks_dict, os.path.join(eval_dir, "valid_depth_masks.pt")) # ME: Save the dictionary of masks
 
     try:
@@ -796,13 +796,13 @@ def eval_nvs(dataset, final_params, num_frames, eval_dir, sil_thres,
         if wandb_run is None:
             plot_rgbd_silhouette(color, depth, im, rastered_depth_viz, presence_sil_mask, diff_depth_l1,
                                  psnr, depth_l1, fig_title, plot_dir, 
-                                 plot_name=plot_name, save_plot=True)
+                                 plot_name=plot_name, save_plot=True, time_idx = time_idx)
         elif wandb_save_qual:
             plot_rgbd_silhouette(color, depth, im, rastered_depth_viz, presence_sil_mask, diff_depth_l1,
                                  psnr, depth_l1, fig_title, plot_dir, 
                                  plot_name=plot_name, save_plot=True,
                                  wandb_run=wandb_run, wandb_step=None, 
-                                 wandb_title="Eval/Qual Viz")
+                                 wandb_title="Eval/Qual Viz", time_idx = time_idx)
 
     # Compute Average Metrics based on valid NVS frames
     psnr_list = np.array(psnr_list)
