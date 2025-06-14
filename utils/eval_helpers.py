@@ -515,7 +515,7 @@ def eval(dataset, final_params, num_frames, eval_dir, sil_thres,
         rmse_list.append(rmse.cpu().numpy())
         l1_list.append(depth_l1.cpu().numpy())
 
-        if save_frames and (time_idx % 400 == 0):
+        if save_frames and (time_idx % (400+eval_every-1) == 0):
             # Save Rendered RGB and Depth
             viz_render_im = torch.clamp(im, 0, 1)
             viz_render_im = viz_render_im.detach().cpu().permute(1, 2, 0).numpy()
